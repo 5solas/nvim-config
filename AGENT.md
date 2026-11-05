@@ -27,6 +27,14 @@ The usual way to run this config is a headless server (`nvim --headless --listen
 - Anything that needs a UI waits for the `UIEnter` autocmd.
 - The daemon outlives many edits. Its environment (`PATH` and so on) is frozen at start; `nv --restart` picks up changes.
 
+## Font Rules
+
+Neovim draws on a cell grid, so a font's measured widths matter more than its reviews. Before changing `guifont`, measure the file (hmtx advance widths) and see the README's font section.
+
+- Hangul must be exactly 2 Latin cells. Nerd "Mono" builds of CJK fonts can break this: D2Coding Nerd Font Mono measures 1.0.
+- Ambiguous-width glyphs (`…`, `—`, `→`) must be 1 cell, which rules out Sarasa **Mono**; Sarasa Term and Fixed are fine. Any 2-cell exception needs a `setcellwidths` entry.
+- A 0.6 em Latin font makes a 1.2 em Hangul slot. Hangul glyphs near 1.0 em then look spaced out.
+
 ## Plugin Curation Policy (Strict)
 
 - Do not suggest deprecated plugins: `packer.nvim`, `null-ls`/`none-ls`, `nvim-tree`, `NERDTree`, `coc.nvim`.
@@ -38,6 +46,6 @@ The usual way to run this config is a headless server (`nvim --headless --listen
 
 1. Check that `git status` is clean, `lazy-lock.json` included.
 2. Make one change per commit: `feat(plugin): add gitsigns`.
-3. Verify with `nvim --headless "+checkhealth" "+qa"` or inside the editor, and check `:Lazy profile`.
+3. Verify with `nvim --headless -c "luafile tests/smoke.lua"` and `pwsh -File tests/daemon.ps1` (it opens a Neovide window), then check `:Lazy profile`.
 4. Rollback: delete the plugin's file, run `:Lazy clean`, then `git checkout .`.
 5. After `:Lazy update` breaks something: `git checkout lazy-lock.json`, then `:Lazy restore`.
