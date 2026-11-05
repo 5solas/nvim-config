@@ -25,7 +25,9 @@ The usual way to run this config is a headless server (`nvim --headless --listen
 - `init.lua` runs **before any UI exists**. Never gate startup settings on `vim.g.neovide`, `nvim_list_uis()` or `has("gui_running")`; they are false at that point. Neovide settings go in `lua/core/neovide.lua`, unconditionally.
 - Never open a blocking prompt at startup (`vim.fn.input`, `confirm`). Nothing can answer it and every client would hang.
 - Anything that needs a UI waits for the `UIEnter` autocmd.
-- The daemon outlives many edits. Its environment (`PATH` and so on) is frozen at start; `nv --restart` picks up changes.
+- The daemon outlives many edits. Its environment (`PATH` and so on) is frozen at start; `nvd --restart` picks up changes.
+
+The client is named `nvd` because `nv` is PowerShell's built-in alias for `New-Variable`, and aliases win over scripts on PATH. Check `Get-Command <name>` before naming any command here.
 
 ## Font Rules
 

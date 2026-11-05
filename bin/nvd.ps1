@@ -1,5 +1,5 @@
 #requires -Version 7
-# Neovim 헤드리스 파이프 데몬 + Neovide 클라이언트. 사용법은 nv --help.
+# Neovim 헤드리스 파이프 데몬 + Neovide 클라이언트. 사용법은 nvd --help.
 # 사용자 세션 안에서 실행될 수 있으므로 세션 상태를 바꾸지 않는다.
 
 $ErrorActionPreference = 'Stop'
@@ -8,14 +8,14 @@ $Pipe = $env:NV_PIPE ?? "\\.\pipe\nvim-daemon-$env:USERNAME"
 
 function Show-Help {
     @'
-nv [paths...]        Open in Neovide. Starts the daemon if needed; reuses an open window.
-nv --tui             Attach to the daemon in this terminal.
-nv --status          Show daemon state.
-nv --start           Start the daemon without opening a window.
-nv --stop [--force]  Stop the daemon. Refuses if buffers are modified, unless --force
+nvd [paths...]        Open in Neovide. Starts the daemon if needed; reuses an open window.
+nvd --tui             Attach to the daemon in this terminal.
+nvd --status          Show daemon state.
+nvd --start           Start the daemon without opening a window.
+nvd --stop [--force]  Stop the daemon. Refuses if buffers are modified, unless --force
                      (which also kills a hung daemon).
-nv --restart [--force]
-nv --help
+nvd --restart [--force]
+nvd --help
 Use -- before a path that starts with a dash.
 '@
 }
@@ -62,9 +62,9 @@ function Invoke-Remote([string]$Function, [string]$Value) {
     [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
     try {
         $code = "return require('core.daemon').$Function(...)"
-        $out = & (Resolve-Exe 'nvim') -l (Join-Path $PSScriptRoot 'nv-rpc.lua') $Pipe $code $Value
+        $out = & (Resolve-Exe 'nvim') -l (Join-Path $PSScriptRoot 'nvd-rpc.lua') $Pipe $code $Value
         if ($LASTEXITCODE -eq 3) {
-            throw 'daemon is not responding. It may be waiting on a prompt in its window; answer it there, or run nv --stop --force.'
+            throw 'daemon is not responding. It may be waiting on a prompt in its window; answer it there, or run nvd --stop --force.'
         }
         if ($LASTEXITCODE -ne 0) { throw "remote call failed: $Function" }
         return ($out -join "`n")
@@ -147,5 +147,5 @@ switch ($action[0]) {
             }
         }
     }
-    default { throw "unknown option: $($action[0]). See nv --help" }
+    default { throw "unknown option: $($action[0]). See nvd --help" }
 }

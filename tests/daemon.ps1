@@ -1,19 +1,19 @@
 #requires -Version 7
-# 실제 Neovide 창을 띄워 nv를 검증한다 (창이 잠깐 나타난다). 전용 파이프를 쓰므로 평소 데몬과 충돌하지 않는다.
+# 실제 Neovide 창을 띄워 nvd를 검증한다 (창이 잠깐 나타난다). 전용 파이프를 쓰므로 평소 데몬과 충돌하지 않는다.
 #   pwsh -File tests/daemon.ps1 [-Screenshot <png path>]
 param([string]$Screenshot)
 
 $ErrorActionPreference = 'Stop'
 $env:NV_PIPE = "\\.\pipe\nvim-daemon-test-$PID"
-$nv = Join-Path (Split-Path -Parent $PSScriptRoot) 'bin\nv.ps1'
-$nvCmd = [IO.Path]::ChangeExtension($nv, '.cmd')
+$nvd = Join-Path (Split-Path -Parent $PSScriptRoot) 'bin\nvd.ps1'
+$nvCmd = [IO.Path]::ChangeExtension($nvd, '.cmd')
 $script:failed = 0
 
 function Check([string]$Name, $Ok, $Detail) {
     if ($Ok) { "ok   $Name" }
     else { "FAIL $Name -- $Detail"; $script:failed++ }
 }
-$rpc = Join-Path (Split-Path -Parent $nv) 'nv-rpc.lua'
+$rpc = Join-Path (Split-Path -Parent $nvd) 'nvd-rpc.lua'
 function Rpc([string]$Code, [string]$Value) {
     $saved = [Console]::OutputEncoding
     [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
@@ -35,7 +35,7 @@ function WaitFor([scriptblock]$Cond, [int]$Ms = 8000) {
     return $false
 }
 
-$work = Join-Path ([IO.Path]::GetTempPath()) "nv-test-$PID"
+$work = Join-Path ([IO.Path]::GetTempPath()) "nvd-test-$PID"
 $dirA = Join-Path $work "한글 경로's"
 $dirB = Join-Path $work 'other'
 New-Item -ItemType Directory $dirA, $dirB | Out-Null
@@ -48,12 +48,19 @@ $fileC = Join-Path $dirB 'c.py'
 $bufName = "bufname('%')"
 
 try {
-    Check 'status before start' ((& $nv --status) -eq 'not running') (& $nv --status)
+    # 이름으로 호출: PowerShell 별칭이 스크립트를 가로채지 않아야 한다 (nv는 New-Variable 별칭이었다)
+    $env:Path = "$(Split-Path -Parent $nvd);$env:Path"
+    $resolved = Get-Command nvd
+    Check 'nvd resolves to the script in PowerShell' ($resolved.CommandType -eq 'ExternalScript') $resolved.CommandType
+    Check 'nvd runs by name in PowerShell' ((nvd --status) -eq 'not running') (nvd --status)
+    Check 'nvd runs by name in cmd.exe' ((cmd /c nvd --status) -eq 'not running') (cmd /c nvd --status)
+
+    Check 'status before start' ((& $nvd --status) -eq 'not running') (& $nvd --status)
 
     # cmd.exe 경유: 시작한 프로세스가 끝나도 데몬이 살아 있어야 한다
     $c = [Diagnostics.Stopwatch]::StartNew()
     cmd /c "`"$nvCmd`" --start"
-    "info daemon start via nv.cmd: $($c.ElapsedMilliseconds) ms"
+    "info daemon start via nvd.cmd: $($c.ElapsedMilliseconds) ms"
     $s = Status
     Check 'daemon survives the starting shell' ($s.pid -gt 0) $s
     Check 'daemon has no UI' ($s.uis -eq 0) $s.uis
@@ -65,7 +72,7 @@ try {
     # 첫 열기: Neovide 생성, 한글·공백·작은따옴표 경로
     Push-Location $dirA
     $c.Restart()
-    & $nv $fileA
+    & $nvd $fileA
     $attached = WaitFor { (Status).neovide }
     "info window attached after: $($c.ElapsedMilliseconds) ms"
     Check 'neovide attaches through the pipe' $attached (Status)
@@ -88,7 +95,7 @@ try {
     }
 
     # 재사용: 같은 폴더의 두 번째 파일은 창을 늘리지 않는다
-    & $nv $fileB
+    & $nvd $fileB
     Check 'second file opens in the same window' (WaitFor { (Expr $bufName) -like '*b.c' }) (Expr $bufName)
     Start-Sleep -Milliseconds 300
     Check 'only one neovide' ((Neovides).Count -eq 1) (Neovides).Count
@@ -97,7 +104,7 @@ try {
 
     # 다른 폴더: 새 탭, 탭 단위 cwd
     Push-Location $dirB
-    & $nv 'c.py'
+    & $nvd 'c.py'
     Check 'relative path resolved against the caller' (WaitFor { (Expr $bufName) -like '*c.py' }) (Expr $bufName)
     Check 'other project gets a new tab' ((Expr "tabpagenr('$')") -eq '2') (Expr "tabpagenr('$')")
     Check 'tcd applied' ((Expr "getcwd()") -like '*other') (Expr "getcwd()")
@@ -114,7 +121,7 @@ try {
 
     # 다시 열면 상태 그대로
     Push-Location $dirB
-    & $nv
+    & $nvd
     Check 'reattach' (WaitFor { (Status).neovide }) (Status)
     Check 'reattach keeps tabs' ((Expr "tabpagenr('$')") -eq '2') (Expr "tabpagenr('$')")
     Pop-Location
@@ -128,22 +135,22 @@ try {
     Check ':q keeps the daemon' ((Status).pid -eq $pidBefore) (Status).pid
 
     # 수정된 버퍼가 있으면 --stop 거부
-    & $nv | Out-Null
+    & $nvd | Out-Null
     Check 'attach for edit test' (WaitFor { (Status).neovide }) ''
     Send '<C-\><C-n>iedited<Esc>'
     Check 'buffer is modified' (WaitFor { (Status).modified.Count -gt 0 }) (Status)
     $refused = $false
-    try { & $nv --stop } catch { $refused = $_.Exception.Message -like '*modified*' }
+    try { & $nvd --stop } catch { $refused = $_.Exception.Message -like '*modified*' }
     Check '--stop refuses modified buffers' $refused ''
     Check 'daemon still alive after refusal' ((Status).pid -eq $pidBefore) ''
 
     # --restart --force, 그 뒤 :qa는 진짜 종료
-    & $nv --restart --force
+    & $nvd --restart --force
     $s = Status
     Check '--restart --force gives a new daemon' ($s.pid -ne $pidBefore) $s.pid
     Check 'neovide leaves with the killed daemon' (WaitFor { (Neovides).Count -eq 0 }) (Neovides).Count
     # 수정된 버퍼의 :qa: 저장 질문에 답할 UI가 남아 있어야 한다
-    & $nv | Out-Null
+    & $nvd | Out-Null
     Check 'attach for modified :qa test' (WaitFor { (Status).neovide }) ''
     Send '<C-\><C-n>iedited<Esc>'
     Check 'buffer modified before :qa' (WaitFor { (Status).modified.Count -gt 0 }) ''
@@ -153,26 +160,26 @@ try {
     Start-Sleep -Milliseconds 300
     Check 'ui stays attached during the question' ((Rpc 'return #vim.api.nvim_list_uis()') -eq '1') (Rpc 'return #vim.api.nvim_list_uis()')
     Send 'n'
-    Check 'answering no stops the daemon' (WaitFor { (& $nv --status) -eq 'not running' }) ''
+    Check 'answering no stops the daemon' (WaitFor { (& $nvd --status) -eq 'not running' }) ''
     Check 'neovide leaves after the answer' (WaitFor { (Neovides).Count -eq 0 }) (Neovides).Count
 
-    & $nv | Out-Null
+    & $nvd | Out-Null
     Check 'attach for :qa test' (WaitFor { (Status).neovide }) ''
     Send '<C-\><C-n>:qa<CR>'
-    Check ':qa stops the daemon' (WaitFor { (& $nv --status) -eq 'not running' }) ''
+    Check ':qa stops the daemon' (WaitFor { (& $nvd --status) -eq 'not running' }) ''
     Check 'neovide leaves after :qa' (WaitFor { (Neovides).Count -eq 0 }) (Neovides).Count
 
-    # 멈춘 뒤 다음 nv가 자동으로 다시 띄운다
+    # 멈춘 뒤 다음 nvd가 자동으로 다시 띄운다
     Push-Location $dirB
-    & $nv
-    Check 'nv restarts a stopped daemon' (WaitFor { (Status).neovide }) ''
+    & $nvd
+    Check 'nvd restarts a stopped daemon' (WaitFor { (Status).neovide }) ''
     Pop-Location
-    & $nv --stop --force
-    Check '--stop --force' ((& $nv --status) -eq 'not running') ''
+    & $nvd --stop --force
+    Check '--stop --force' ((& $nvd --status) -eq 'not running') ''
 }
 finally {
     Set-Location $HOME
-    try { & $nv --stop --force } catch {}
+    try { & $nvd --stop --force } catch {}
     Neovides | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
     Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
 }

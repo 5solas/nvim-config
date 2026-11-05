@@ -4,9 +4,9 @@ Windows용 Neovim + Neovide 설정입니다. 헤드리스 Neovim을 파이프 �
 
 ```text
 PowerShell / cmd / 탐색기
-        │  nv file.c
+        │  nvd file.c
         ▼
-   bin/nv.ps1 ──── nvim -l nv-rpc.lua ────┐ 파일 열기, 상태 조회
+   bin/nvd.ps1 ──── nvim -l nvd-rpc.lua ────┐ 파일 열기, 상태 조회
         │                                 ▼
         │                  \\.\pipe\nvim-daemon-<user>
         │                                 ▲
@@ -37,26 +37,27 @@ pwsh -File D:\work\nvim-config\scripts\install.ps1            # 로그온 자동
 ## 사용법
 
 ```powershell
-nv                  # 열기. 데몬이 없으면 시작하고, 창이 있으면 그 창을 앞으로 가져온다
-nv src\main.c a.py  # 파일 열기. 상대 경로는 호출한 폴더 기준
-nv --tui            # 지금 터미널에서 데몬에 연결
-nv --status         # pid, UI 수, 수정된 버퍼, LSP
-nv --start          # 창 없이 데몬만 시작
-nv --stop           # 종료. 수정된 버퍼가 있으면 거부 (--force로 강제)
-nv --restart        # PATH 등 환경 변수를 바꾼 뒤 반영할 때
+nvd                  # 열기. 데몬이 없으면 시작하고, 창이 있으면 그 창을 앞으로 가져온다
+nvd src\main.c a.py  # 파일 열기. 상대 경로는 호출한 폴더 기준
+nvd --tui            # 지금 터미널에서 데몬에 연결
+nvd --status         # pid, UI 수, 수정된 버퍼, LSP
+nvd --start          # 창 없이 데몬만 시작
+nvd --stop           # 종료. 수정된 버퍼가 있으면 거부 (--force로 강제)
+nvd --restart        # PATH 등 환경 변수를 바꾼 뒤 반영할 때
 ```
 
-- PowerShell에서는 `nv.ps1`이 현재 세션에서 바로 실행되고, cmd 등에서는 `nv.cmd`가 pwsh를 거쳐 실행합니다.
-- 다른 폴더에서 `nv`를 호출하면 새 탭을 열고 그 탭의 작업 폴더만 바꿉니다.
+- PowerShell에서는 `nvd.ps1`이 현재 세션에서 바로 실행되고, cmd 등에서는 `nvd.cmd`가 pwsh를 거쳐 실행합니다.
+- 이름이 `nv`가 아닌 이유는 PowerShell에서 `nv`가 `New-Variable`의 내장 별칭이기 때문입니다.
+- 다른 폴더에서 `nvd`를 호출하면 새 탭을 열고 그 탭의 작업 폴더만 바꿉니다.
 - `NV_PIPE`에 다른 파이프 이름을 지정하면 독립된 데몬을 하나 더 띄울 수 있습니다.
 
 | 동작 | 결과 |
 |---|---|
 | 창 닫기, 마지막 창에서 `:q` `:wq` `ZZ` `ZQ` | UI만 분리. 데몬과 버퍼 유지 |
-| `:qa` | 데몬 종료. 다음 `nv`가 새로 시작 |
-| 마지막 창에서 수정된 버퍼를 `:q` | 버퍼는 숨겨진 채 데몬에 남음. `:ls`로 확인, `nv --stop`이 경고 |
+| `:qa` | 데몬 종료. 다음 `nvd`가 새로 시작 |
+| 마지막 창에서 수정된 버퍼를 `:q` | 버퍼는 숨겨진 채 데몬에 남음. `:ls`로 확인, `nvd --stop`이 경고 |
 
-데몬의 환경 변수는 시작 시점에 고정됩니다. PATH를 바꿨다면 `nv --restart`를 실행합니다.
+데몬의 환경 변수는 시작 시점에 고정됩니다. PATH를 바꿨다면 `nvd --restart`를 실행합니다.
 
 ## 주요 키
 
@@ -117,7 +118,7 @@ compiledb를 직접 쓰면 Windows의 SCons 로그에서 문제가 생겨 다음
 - `VariantDir`의 `duplicate=1`(SCons 기본값)에서는 `file`이 복사본(`build/main.c`)을 가리킵니다. 원본을 열면 clangd가 가까운 항목의 플래그를 빌려 쓰며, 시험한 프로젝트에서는 오류 없이 동작했습니다. 파일별로 플래그가 다른 프로젝트라면 `duplicate=0`을 권합니다.
 - `SConsignFile`로 서명 파일을 프로젝트 루트 밖에 둔 경우 치울 수 없어 안내 메시지를 표시합니다.
 - 다른 터미널에서 `scons`가 빌드 중일 때는 실행하지 마세요. 서명 파일을 잠시 치우므로 빌드 상태가 꼬일 수 있습니다.
-- 데몬의 환경으로 실행하므로, 툴체인을 PATH에 추가했다면 `nv --restart`가 필요합니다.
+- 데몬의 환경으로 실행하므로, 툴체인을 PATH에 추가했다면 `nvd --restart`가 필요합니다.
 
 ## 폰트
 
@@ -143,7 +144,7 @@ Monoplex는 IBM Plex Mono와 IBM Plex Sans KR을 합친 OFL 폰트입니다. 측
 
 Neovim 격자와 맞지 않는 부분은 설정으로 보정했습니다.
 
-- 원문자(`①`, `❶`)는 Monoplex에서 2칸 글리프이므로 데몬에서 `setcellwidths`로 2칸으로 맞춥니다. 터미널은 1칸으로 그리므로 일반 `nvim`에는 적용하지 않습니다. `nv --tui`로 볼 때는 이 문자만 어긋날 수 있습니다.
+- 원문자(`①`, `❶`)는 Monoplex에서 2칸 글리프이므로 데몬에서 `setcellwidths`로 2칸으로 맞춥니다. 터미널은 1칸으로 그리므로 일반 `nvim`에는 적용하지 않습니다. `nvd --tui`로 볼 때는 이 문자만 어긋날 수 있습니다.
 - 행 높이가 빠듯해 `linespace = 2`를 주고, 선 문자의 틈을 막기 위해 `box-drawing`은 `native`로 둡니다.
 - 입력 모드에서만 IME를 켜서 노멀 모드 키가 한글 조합으로 빠지지 않게 합니다.
 - 힌팅, 안티앨리어싱, 감마는 Neovide 기본값입니다.
@@ -156,14 +157,14 @@ Neovim 격자와 맞지 않는 부분은 설정으로 보정했습니다.
 init.lua              core 로드와 lazy 부트스트랩
 AGENT.md              LLM 에이전트 지침 (CLAUDE.md가 불러옴)
 lazy-lock.json        플러그인 버전 고정
-bin/                  nv.ps1, nv.cmd, nv-rpc.lua
+bin/                  nvd.ps1, nvd.cmd, nvd-rpc.lua
 lua/core/             options, keymaps, autocmds, neovide, daemon
 lua/plugins/          기능당 파일 하나
 lua/tools/compiledb.lua, plugin/compiledb.lua
 neovide/config.toml   Neovide 프로세스 설정
 scripts/install.ps1
 tests/smoke.lua       scons, compiledb, clangd, 인코딩, 포맷 통합 테스트
-tests/daemon.ps1      실제 Neovide 창으로 nv 통합 테스트
+tests/daemon.ps1      실제 Neovide 창으로 nvd 통합 테스트
 ```
 
 ## 일상 운영

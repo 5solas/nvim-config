@@ -1,7 +1,7 @@
 #requires -Version 7
 <#
 .SYNOPSIS
-  이 저장소를 Neovim/Neovide 설정으로 연결하고 nv 명령을 PATH에 추가한다. 다시 실행해도 안전하다.
+  이 저장소를 Neovim/Neovide 설정으로 연결하고 nvd 명령을 PATH에 추가한다. 다시 실행해도 안전하다.
 .PARAMETER Autostart
   로그온할 때 데몬을 시작하도록 시작프로그램에 바로가기를 만든다.
 .PARAMETER Uninstall
@@ -37,7 +37,7 @@ if ($Uninstall) {
     $userPath = [Environment]::GetEnvironmentVariable('Path', 'User') -split ';' | Where-Object { $_ -and $_ -ne $Bin }
     [Environment]::SetEnvironmentVariable('Path', ($userPath -join ';'), 'User')
     Remove-Item -LiteralPath $Shortcut -ErrorAction SilentlyContinue
-    'uninstalled. nv --stop first if the daemon is still running. Fonts stay installed; remove Monoplex KR Nerd Font in Windows settings if unwanted.'
+    'uninstalled. nvd --stop first if the daemon is still running. Fonts stay installed; remove Monoplex KR Nerd Font in Windows settings if unwanted.'
     return
 }
 
@@ -121,7 +121,7 @@ foreach ($path in $Links.Keys) {
 $userPath = [Environment]::GetEnvironmentVariable('Path', 'User') -split ';' | Where-Object { $_ }
 if ($userPath -notcontains $Bin) {
     [Environment]::SetEnvironmentVariable('Path', (($userPath + $Bin) -join ';'), 'User')
-    "added $Bin to user PATH. Open a new shell to use nv."
+    "added $Bin to user PATH. Open a new shell to use nvd."
 }
 if (($env:Path -split ';') -notcontains $Bin) { $env:Path += ";$Bin" }
 
@@ -136,10 +136,10 @@ if ($Autostart) {
     $shell = New-Object -ComObject WScript.Shell
     $link = $shell.CreateShortcut($Shortcut)
     $link.TargetPath = (Get-Command pwsh).Source
-    $link.Arguments = "-NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$Bin\nv.ps1`" --start"
+    $link.Arguments = "-NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$Bin\nvd.ps1`" --start"
     $link.WindowStyle = 7
     $link.Save()
     "autostart: $Shortcut"
 }
 
-'done. Try: nv --help'
+'done. Try: nvd --help'
