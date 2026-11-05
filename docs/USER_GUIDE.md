@@ -110,6 +110,7 @@ Windows에서 Neovim을 백그라운드에 띄워 두고 Neovide 창을 붙였�
 | `tests\smoke.lua`, `tests\daemon.ps1` | 통합 테스트 |
 | `docs\USER_GUIDE.md` | 이 문서 |
 | `docs\CUSTOMIZATIONS.md` | 순정 Neovim 대비 추가, 변경한 항목과 그 출처 |
+| `docs\DEVELOPMENT_LOG.md` | 개발 기록. 요청, 결정, 겪은 문제, 검증 상태, 남은 일 |
 | `AGENT.md` | LLM 에이전트 규칙의 원본. [10절](#10-llm-에이전트-규칙-문서) 참고 |
 | `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` | 에이전트별 진입 파일. `AGENT.md`로 연결만 합니다 |
 
