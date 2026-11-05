@@ -2,6 +2,8 @@
 
 Windows용 Neovim + Neovide 설정입니다. 헤드리스 Neovim을 파이프 데몬으로 띄워 두고 Neovide를 클라이언트로 붙입니다. 창을 닫아도 버퍼와 LSP가 그대로 남고, 다시 열 때는 플러그인 로딩 없이 바로 연결됩니다.
 
+취지, 목표, 파일 위치, 사용법은 [사용자 안내서](docs/USER_GUIDE.md)에 정리되어 있습니다.
+
 ```text
 PowerShell / cmd / 탐색기
         │  nvd file.c
