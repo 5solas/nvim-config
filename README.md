@@ -157,7 +157,9 @@ Neovim 격자와 맞지 않는 부분은 설정으로 보정했습니다.
 
 ```text
 init.lua              core 로드와 lazy 부트스트랩
-AGENT.md              LLM 에이전트 지침 (CLAUDE.md가 불러옴)
+AGENT.md              LLM 에이전트 규칙 원본 (CLAUDE.md, AGENTS.md, GEMINI.md가 연결)
+docs/USER_GUIDE.md    사용자 안내서 (취지, 파일 위치, 사용법, 규칙 문서 위치)
+docs/CUSTOMIZATIONS.md 순정 Neovim 대비 추가 내역과 출처
 lazy-lock.json        플러그인 버전 고정
 bin/                  nvd.ps1, nvd.cmd, nvd-rpc.lua
 lua/core/             options, keymaps, autocmds, neovide, daemon
