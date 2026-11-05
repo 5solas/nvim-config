@@ -1,0 +1,8 @@
+# Neovide 프로세스 설정 (%APPDATA%\neovide -> 이 폴더).
+# 글꼴과 g:neovide_* 는 서버에서 읽으므로 lua/core/neovide.lua에 있다.
+fork = true
+tabs = false
+
+# linespace를 쓰면 폰트의 선 문자 사이에 틈이 생기므로 Neovide가 직접 그리게 한다
+[box-drawing]
+mode = "native"

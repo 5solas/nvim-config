@@ -4,6 +4,8 @@ vim.loader.enable()
 require("core.options")
 require("core.keymaps")
 require("core.autocmds")
+require("core.neovide")
+require("core.daemon")
 
 local lazypath = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy", "lazy.nvim")
 if not vim.uv.fs_stat(lazypath) then
