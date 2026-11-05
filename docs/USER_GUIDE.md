@@ -67,6 +67,7 @@ Windows에서 Neovim을 백그라운드에 띄워 두고 Neovide 창을 붙였�
 | `%LOCALAPPDATA%\Microsoft\Windows\Fonts\MonoplexKRNerdFont-*.ttf` | 주 폰트 4종 (사용자 범위) | `install.ps1` | 제외 |
 | `%USERPROFILE%\scoop` | neovim, neovide, ripgrep, llvm 등 외부 도구 | scoop | 제외 |
 | 시작프로그램 폴더의 `nvim-daemon.lnk` | 로그온 시 데몬 시작. `-Autostart`를 줬을 때만 생성 | `install.ps1` | 제외 |
+| 사용자 환경 변수 `WORK_KB_ROOT` | work-kb 저장소를 받은 폴더. 있으면 `<값>\nvim`의 work-kb 플러그인을 불러옵니다 ([work-kb](#work-kb)). 없으면 work-kb 기능만 빠집니다 | work-kb 저장소의 `install.ps1` | 제외 |
 
 프로젝트 쪽에 두는 파일도 있습니다.
 
@@ -104,6 +105,7 @@ Windows에서 Neovim을 백그라운드에 띄워 두고 Neovide 창을 붙였�
 | `lua\core\neovide.lua` | 폰트, IME, 확대/축소, 커서 애니메이션 |
 | `lua\core\daemon.lua` | 데몬 쪽 기능 (파일 열기, 상태, 창 분리) |
 | `lua\plugins\*.lua` | 플러그인 설정. **기능당 파일 하나** |
+| `lua\plugins\work-kb.lua` | work-kb 플러그인 연결. `WORK_KB_ROOT`가 없으면 아무것도 하지 않습니다 |
 | `lua\tools\compiledb.lua`, `plugin\compiledb.lua` | `:CompileDb` 구현과 명령 등록 |
 | `neovide\config.toml` | Neovide 프로세스 설정 |
 | `scripts\install.ps1` | 설치와 제거 |
@@ -218,6 +220,7 @@ nvd
 | 창, 버퍼 | `<C-h/j/k/l>` | 창 이동 |
 | | `]b` / `[b` | 다음 / 이전 버퍼 |
 | Neovide | `<C-=>` / `<C-->` / `<C-0>` | 확대 / 축소 / 초기화 |
+| work-kb | `<leader>k` + 글자 | 아래 [work-kb](#work-kb) 참고. `WORK_KB_ROOT`가 있을 때만 |
 
 ### 저장할 때 포맷
 
@@ -243,6 +246,28 @@ clangd가 헤더를 찾으려면 `compile_commands.json`이 필요합니다. 프
 - **다른 터미널에서 `scons`가 빌드 중일 때는 실행하지 마세요.** 서명 파일(`.sconsign*`)을 잠시 치우기 때문에 빌드 상태가 꼬일 수 있습니다.
 - MSVC `cl`은 파싱되지 않습니다. SConstruct에서 `env.Tool('compilation_db')`와 `env.CompilationDatabase()`를 사용하세요.
 - 강제 종료로 `.sconsign*.compiledb-bak` 파일이 남으면 다음 `:CompileDb`가 복구합니다.
+
+### work-kb
+
+work-kb는 업무 메모 캡처, 위키 검색, Jira 작업을 하는 Markdown 지식 베이스입니다. 코드는 [work-kb 저장소](https://github.com/5solas/work-kb)(`nvim` 브랜치)에 있고, 이 설정은 `lua\plugins\work-kb.lua` 한 파일로 그 플러그인을 불러오기만 합니다.
+
+- **켜는 법:** work-kb 저장소의 `install.ps1`이 사용자 환경 변수 `WORK_KB_ROOT`에 저장소 위치를 적습니다. 그 뒤 **`nvd --restart`** 를 실행하세요. 데몬의 환경 변수는 시작할 때 고정되므로, 재시작 전 데몬에는 work-kb가 없습니다.
+- **변수가 없거나 `<WORK_KB_ROOT>\nvim\lua\work-kb\init.lua`가 없으면** 키, 명령, 메시지가 하나도 생기지 않습니다. work-kb가 없는 PC에서도 이 설정을 그대로 씁니다.
+- 처음 키를 누르거나 `:WorkKb`를 실행할 때 불러옵니다. 데몬은 시작 직후 다른 플러그인과 함께 미리 불러오고, 이때 보조 프로세스(`kb.py serve`)도 띄웁니다.
+
+| 키 (노멀) | 기능 | 키 (노멀) | 기능 |
+|---|---|---|---|
+| `<leader>kc` | 캡처 | `<leader>ko` | 커서 위치 열기 |
+| `<leader>kC` | 클립보드 이미지 캡처 | `<leader>kl` | link 실행 |
+| `<leader>kF` | 이미지 파일 캡처 | `<leader>k?` | 상태 |
+| `<leader>ki` | inbox 메모 | `<leader>kj` | Jira 작업 |
+| `<leader>kt` | 오늘 daily | `<leader>kg` | 편찬 (ingest → compile) |
+| `<leader>ks` | 검색 | `<leader>kG` | 편찬 미리 보기 (`--dry-run`) |
+| | | `<leader>ka` | 주제 제안 승인 |
+
+비주얼 모드의 `<leader>kc`, `<leader>ki`는 선택한 글을 캡처, inbox 버퍼에 미리 넣습니다. 같은 기능을 `:WorkKb <이름>`(예: `:WorkKb today`)으로도 실행할 수 있고, `:WorkKb`만 입력하면 이름 목록이 나옵니다.
+
+볼트 구성, Jira 설정, Python 요구 사항 등 그 밖의 내용은 work-kb 저장소의 `docs/USER-GUIDE.md`를 보세요.
 
 ## 6. 설정 바꾸기
 
@@ -299,6 +324,7 @@ git -C D:\work\nvim-config checkout lazy-lock.json
 | 설치 시 `already exists and is not a link` | 기존 설정 폴더가 있습니다. 옮긴 뒤 다시 실행합니다 |
 | `:CompileDb`가 `no compile commands` 표시 | 메시지의 안내를 따릅니다. MSVC이거나 `SConsignFile`을 프로젝트 밖에 둔 경우입니다 |
 | 플러그인이나 언어 서버가 없음 | `nvd --stop` 후 `install.ps1`을 다시 실행합니다 |
+| `<leader>k` 키나 `:WorkKb`가 없음 | 데몬에 `WORK_KB_ROOT`가 없거나 `<값>\nvim\lua\work-kb\init.lua`가 없습니다. 변수를 확인하고 `nvd --restart`를 실행합니다 |
 
 상태를 자세히 볼 때는 Neovim 안에서 `:checkhealth`, `:Lazy`, `:Mason`, `:ConformInfo`를 사용합니다. 로그는 `%LOCALAPPDATA%\nvim-data`의 `nvim.log`, `lsp.log`, `mason.log`에 있습니다.
 
@@ -321,7 +347,7 @@ nvim --headless -c "luafile tests/smoke.lua"
 pwsh -File tests/daemon.ps1
 ```
 
-**자동 테스트로 확인한 것:** 데몬 시작과 유지, 창 연결과 분리, 재연결, 한글/공백/작은따옴표 경로, 탭별 작업 폴더, `:q`와 `:qa` 동작, 수정된 버퍼 보호, `:CompileDb`와 clangd 연동, 인코딩 판별, 포맷.
+**자동 테스트로 확인한 것:** 데몬 시작과 유지, 창 연결과 분리, 재연결, 한글/공백/작은따옴표 경로, 탭별 작업 폴더, `:q`와 `:qa` 동작, 수정된 버퍼 보호, `:CompileDb`와 clangd 연동, 인코딩 판별, 포맷, work-kb 연결 (가짜 플러그인으로: 변수가 없으면 아무것도 없음, 키나 `:WorkKb`로 불러오고 `root`가 전달됨).
 
 **아직 확인하지 못한 것:**
 
@@ -329,6 +355,7 @@ pwsh -File tests/daemon.ps1
 - 창이 앞으로 오는 동작, 한글 입력(IME) 전환
 - fzf-lua 검색 창, blink.cmp 자동완성 팝업, gitsigns와 oil의 실제 조작 (플러그인 로드까지만 확인)
 - 새 PC나 scoop이 없는 환경에서의 설치, `install.ps1`의 `-Autostart`와 `-Uninstall`
+- 실제 work-kb 저장소와 `kb.py serve`를 쓴 work-kb 기능, Neovide 창에서의 work-kb 키 조작
 
 문제를 발견하면 이 절을 갱신해 주세요.
 

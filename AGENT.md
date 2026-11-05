@@ -104,7 +104,8 @@ Each of these went wrong once while building this config. Add new ones when you 
 **Files and installation**
 
 - `.gitignore` stays empty on purpose and `lazy-lock.json` stays tracked.
-- `%LOCALAPPDATA%\nvim` and `%APPDATA%\neovide` are junctions, so writing through them edits tracked files here. Installers must refuse to overwrite an existing folder. The separate `work-kb-nvim` project must coexist with them.
+- `%LOCALAPPDATA%\nvim` and `%APPDATA%\neovide` are junctions, so writing through them edits tracked files here. Installers must refuse to overwrite an existing folder.
+- work-kb is loaded by `lua/plugins/work-kb.lua` from `<WORK_KB_ROOT>\nvim`; with no variable or no plugin folder the spec returns `{}`. It is a local `dir` plugin, so it never appears in `lazy-lock.json`, and its own tests live in the work-kb repository. The daemon's VimEnter preload loads it too, and its `setup()` then starts `kb.py serve`. A daemon started before `WORK_KB_ROOT` was set needs `nvd --restart`.
 - A user PATH change only reaches processes started afterward. A shell, or an agent's shell, started earlier will not find `nvd`; call `bin\nvd.ps1` by path or start a new shell.
 
 **Tools**

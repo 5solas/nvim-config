@@ -283,5 +283,127 @@ do
   check("lua formatted by stylua", read(dir .. "/a.lua") == "local x = 1\nreturn x\n", read(dir .. "/a.lua"))
 end
 
+-- work-kb (lua/plugins/work-kb.lua): spec은 시작 때 WORK_KB_ROOT를 읽으므로 변수를 바꾼 자식 nvim으로 시험한다.
+-- 실제 work-kb 저장소 대신 setup()이 받은 값을 기록하는 가짜 플러그인을 쓴다.
+do
+  local base = vim.fs.normalize(vim.fn.tempname())
+  local kb = base .. "/work kb 한글"
+  write(
+    kb .. "/nvim/lua/work-kb/init.lua",
+    [[
+local M = {}
+function M.setup(opts)
+  _G.kb_stub = { opts = opts, calls = (_G.kb_stub and _G.kb_stub.calls or 0) + 1 }
+  vim.keymap.set("n", opts.prefix .. "t", function()
+    _G.kb_stub.pressed = "t"
+  end, { desc = "work-kb: today" })
+  vim.api.nvim_create_user_command("WorkKb", function(o)
+    _G.kb_stub.cmd = o.args
+  end, { nargs = "?" })
+end
+return M
+]]
+  )
+
+  -- 자식 nvim에서 ACTION("key", "cmd" 또는 nil)을 하고 상태를 JSON으로 받는다. 60초 넘으면 죽인다.
+  local function child(root, action)
+    local out = base .. "/result.json"
+    os.remove(out)
+    local script = base .. "/child.lua"
+    write(
+      script,
+      ([[
+local s = {}
+local function state(tag)
+  s[tag] = {
+    loaded = package.loaded["work-kb"] ~= nil,
+    command = vim.fn.exists(":WorkKb"),
+    key = vim.fn.maparg("<leader>kt", "n", false, true).desc or "",
+    xkey = vim.fn.maparg("<leader>kc", "x", false, true).desc or "",
+  }
+end
+state("start")
+local action = %q
+if action == "key" then
+  vim.api.nvim_feedkeys(vim.keycode("<leader>kt"), "x", false)
+elseif action == "cmd" then
+  vim.cmd("WorkKb hello")
+end
+state("after")
+s.stub = _G.kb_stub
+s.errmsg = vim.v.errmsg
+s.messages = vim.api.nvim_exec2("messages", { output = true }).output
+local f = assert(io.open(%q, "wb"))
+f:write(vim.json.encode(s))
+f:close()
+vim.cmd("qa!")
+]]):format(action or "", out)
+    )
+    local env = vim.fn.environ()
+    env.WORK_KB_ROOT = root
+    local r = vim
+      .system({ vim.v.progpath, "--headless", "-i", "NONE", "-c", "luafile " .. vim.fn.fnameescape(script) }, {
+        env = env,
+        clear_env = true,
+        text = true,
+      })
+      :wait(60000)
+    local data = read(out)
+    return data and vim.json.decode(data) or { code = r.code, stderr = r.stderr }, r
+  end
+
+  local function quiet(s, r)
+    return s.errmsg == "" and s.messages == "" and (r.stderr or "") == "",
+      vim.inspect({ s.errmsg, s.messages, r.stderr })
+  end
+
+  -- 변수 없음 (nil), 없는 폴더: 아무것도 생기지 않는다
+  for _, case in ipairs({ { "unset", nil }, { "missing folder", base .. "/none" } }) do
+    local s, r = child(case[2], "")
+    local st = s.start or {}
+    check(
+      ("work-kb %s: no command, no keys"):format(case[1]),
+      st.command == 0 and st.key == "" and st.xkey == "",
+      vim.inspect(s)
+    )
+    check(("work-kb %s: no message or error"):format(case[1]), quiet(s, r))
+  end
+
+  -- 키로 불러오기: 시작 때는 자리 표시만 있고, 누르면 setup이 root를 받아 실제 키가 동작한다
+  do
+    local s, r = child(kb, "key")
+    local st, af, stub = s.start or {}, s.after or {}, s.stub or { opts = {} }
+    check("work-kb key: not loaded at startup", st.loaded == false and st.command == 2, vim.inspect(s))
+    check(
+      "work-kb key: placeholders carry desc",
+      st.key == "work-kb: today" and st.xkey == "work-kb: capture (선택 글)",
+      vim.inspect(st)
+    )
+    check(
+      "work-kb key: loads and runs the key once",
+      af.loaded and stub.calls == 1 and stub.pressed == "t",
+      vim.inspect(s)
+    )
+    check(
+      "work-kb key: root and prefix arrive",
+      stub.opts.root == kb and stub.opts.prefix == "<leader>k",
+      vim.inspect(stub.opts)
+    )
+    check("work-kb key: no message or error", quiet(s, r))
+  end
+
+  -- 명령으로 불러오기
+  do
+    local s, r = child(kb, "cmd")
+    local stub = s.stub or { opts = {} }
+    check(
+      "work-kb command: loads and runs",
+      stub.calls == 1 and stub.cmd == "hello" and stub.opts.root == kb,
+      vim.inspect(s)
+    )
+    check("work-kb command: no message or error", quiet(s, r))
+  end
+end
+
 print(failures == 0 and "ALL PASSED" or (failures .. " FAILED"))
 vim.cmd(failures == 0 and "qa!" or "cq!")

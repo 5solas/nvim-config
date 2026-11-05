@@ -76,6 +76,8 @@ Neovim 설치 폴더의 파일은 수정하지 않았습니다. 아래 내용은
 | `]h` `[h` | 다음, 이전 변경 블록 | `lua/plugins/git.lua` | 판단 |
 | `<leader>gs` `gr` `gp` `gb` `gd` | 스테이지, 되돌리기, 미리 보기, blame, diff | `lua/plugins/git.lua` | 스테이지·되돌리기는 자료, 나머지는 판단 |
 | `<C-=>` `<C-->` `<C-0>` | Neovide 확대, 축소, 초기화 | `lua/core/neovide.lua` | 판단 |
+| `<leader>kc` `kC` `kF` `ki` `kt` `ks` `ko` `kl` `k?` `kj` `kg` `kG` `ka` | work-kb: 캡처, 클립보드 이미지, 이미지 파일, inbox, 오늘 daily, 검색, 커서 위치 열기, link, 상태, Jira, 편찬, 편찬 미리 보기, 주제 제안 승인. `WORK_KB_ROOT`가 있을 때만 | `lua/plugins/work-kb.lua`가 첫 사용 때 불러오고, 실제 키는 플러그인의 `setup()`이 만듦 | 요청 |
+| `<leader>kc` `ki` (비주얼) | work-kb: 선택한 글로 캡처, inbox | 같음 | 요청 |
 
 `]b`, `[b`도 파일에 있지만 순정과 같은 동작이어서 달라지는 것은 없습니다. `K`, `gc`는 Neovim 내장 기능을 그대로 씁니다.
 
@@ -95,6 +97,7 @@ Neovim 설치 폴더의 파일은 수정하지 않았습니다. 아래 내용은
 | 입력 모드, 검색 진입과 이탈 | IME 켜기와 끄기 | `lua/core/neovide.lua` | 요청(한글 처리) |
 | 마지막 창의 `:q` | 데몬 대신 창만 분리 | `lua/core/daemon.lua` | 요청(데몬) |
 | 데몬 시작 직후 | 지연 로드 플러그인 미리 로드 | `lua/core/daemon.lua` | 판단 |
+| work-kb를 불러온 뒤 | 볼트의 `.md`에 `autoread`, 새 `.md`는 UTF-8과 LF. 0.3초 뒤 보조 프로세스 `kb.py serve` 시작, 종료할 때 정리. 데몬에서는 위 미리 로드 때문에 시작 직후 일어남 | work-kb 플러그인 (`lua/plugins/work-kb.lua`가 불러옴) | 요청 |
 
 ## 명령
 
@@ -102,6 +105,7 @@ Neovim 설치 폴더의 파일은 수정하지 않았습니다. 아래 내용은
 |---|---|---|
 | `nvd` (셸) | 데몬 관리, 파일 열기. `bin/` | 요청 |
 | `:CompileDb` | `compile_commands.json` 생성. `lua/tools/compiledb.lua` | 요청 |
+| `:WorkKb [이름]` | work-kb 기능 실행. 이름 없이 실행하면 목록 표시. 플러그인이 정의하고 `lua/plugins/work-kb.lua`가 첫 사용 때 불러옴. `WORK_KB_ROOT`가 있을 때만 | 요청 |
 
 ## 플러그인과 도구
 
@@ -118,6 +122,7 @@ Neovim 설치 폴더의 파일은 수정하지 않았습니다. 아래 내용은
 | conform.nvim | `lua/plugins/conform.lua` | 저장 시 포맷. C/C++는 `.clang-format`이 있을 때만 | 자료 (C/C++ 조건은 판단) |
 | oil.nvim | `lua/plugins/explorer.lua` | 없음 | 자료 |
 | gitsigns.nvim | `lua/plugins/git.lua` | 없음 | 자료 |
+| work-kb (다른 저장소의 로컬 플러그인, `<WORK_KB_ROOT>\nvim`) | `lua/plugins/work-kb.lua` | `root`를 `WORK_KB_ROOT`로, 접두 키를 `<leader>k`로 지정. 변수나 플러그인 폴더가 없으면 spec이 비어 아무것도 더하지 않음. `lazy-lock.json`에 들어가지 않음 | 요청 |
 
 **언어 서버:** `lua_ls`, `pyright`, `ruff`, `rust_analyzer`는 자료, `clangd`는 compiledb 요청에 따라 추가했습니다. clangd에는 `--background-index`, `--header-insertion=never`, `--query-driver`를 줍니다. `lua_ls`는 LuaJIT과 Neovim 런타임을 인식하도록 설정했습니다.
 
@@ -178,6 +183,7 @@ Neovim 설치 폴더의 파일은 수정하지 않았습니다. 아래 내용은
 | 옵션 하나 | `lua/core/options.lua`에서 해당 줄 삭제 |
 | 키 하나 | 해당 파일에서 줄 삭제 |
 | 플러그인 하나 | `lua/plugins/`의 파일을 지우고 `:Lazy clean`. **단, `lua/plugins/lsp.lua`는 blink.cmp에 의존합니다** (`dependencies`와 `get_lsp_capabilities`). `cmp.lua`를 지워도 `lsp.lua`가 blink.cmp를 다시 받아 오므로, 자동완성까지 없애려면 `lsp.lua`도 함께 고쳐야 합니다 |
+| work-kb | `lua/plugins/work-kb.lua`를 지우거나 `WORK_KB_ROOT`를 없앱니다. 로컬 폴더 플러그인이라 `:Lazy clean`은 work-kb 저장소를 지우지 않습니다 |
 | `confirm` | 지우면 수정된 버퍼의 `:qa`가 질문 없이 오류로 끝납니다 |
 | 전체 | [사용자 안내서 8절](USER_GUIDE.md#8-제거) |
 

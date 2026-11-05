@@ -90,6 +90,9 @@ nvd --restart        # PATH 등 환경 변수를 바꾼 뒤 반영할 때
 | 포맷 | conform.nvim | `lua/plugins/conform.lua` |
 | 파일 편집 | oil.nvim | `lua/plugins/explorer.lua` |
 | Git | gitsigns.nvim | `lua/plugins/git.lua` |
+| 지식 베이스 | work-kb (다른 저장소, 로컬 폴더) | `lua/plugins/work-kb.lua` |
+
+work-kb는 [work-kb 저장소](https://github.com/5solas/work-kb)(`nvim` 브랜치)의 플러그인입니다. 사용자 환경 변수 `WORK_KB_ROOT`가 가리키는 클론의 `nvim` 폴더를 lazy.nvim의 `dir` 플러그인으로 불러오고, 첫 `<leader>k` 키나 `:WorkKb`에서 로드합니다. 변수나 플러그인 폴더가 없으면 spec이 비어 시작 비용도 기능도 더하지 않으므로, work-kb가 없는 PC에서도 같은 설정을 씁니다. 로컬 플러그인이라 `lazy-lock.json`에 버전이 남지 않고 work-kb 저장소의 커밋을 그대로 따릅니다. 플러그인 자체의 테스트는 그 저장소에 있습니다. 사용법은 [사용자 안내서](docs/USER_GUIDE.md#work-kb)에 있습니다.
 
 LSP: `lua_ls`, `pyright`, `ruff`, `rust_analyzer`, `clangd`. C/C++는 `.clang-format`이 있는 프로젝트에서만 저장 시 포맷합니다. 규칙이 없는 기존 코드가 통째로 재정렬되는 것을 막기 위해서입니다.
 
@@ -168,7 +171,7 @@ lua/plugins/          기능당 파일 하나
 lua/tools/compiledb.lua, plugin/compiledb.lua
 neovide/config.toml   Neovide 프로세스 설정
 scripts/install.ps1
-tests/smoke.lua       scons, compiledb, clangd, 인코딩, 포맷 통합 테스트
+tests/smoke.lua       scons, compiledb, clangd, 인코딩, 포맷, work-kb 연결 통합 테스트
 tests/daemon.ps1      실제 Neovide 창으로 nvd 통합 테스트
 ```
 
