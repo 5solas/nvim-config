@@ -23,12 +23,6 @@ local servers = {
   },
 }
 
--- mason 패키지 이름. clangd는 시스템에 없을 때만 mason으로 받는다.
-local tools = { "lua-language-server", "pyright", "ruff", "rust-analyzer", "stylua" }
-if vim.fn.executable("clangd") == 0 then
-  table.insert(tools, "clangd")
-end
-
 return {
   "neovim/nvim-lspconfig",
   event = { "BufReadPre", "BufNewFile" },
@@ -40,6 +34,13 @@ return {
   },
   config = function()
     require("mason").setup()
+
+    -- mason 패키지 이름. clangd는 시스템에 없을 때만 mason으로 받는다.
+    -- PATH 탐색 비용이 시작 시간에 더해지지 않도록 spec 평가 시점이 아니라 여기서 확인한다.
+    local tools = { "lua-language-server", "pyright", "ruff", "rust-analyzer", "stylua" }
+    if vim.fn.executable("clangd") == 0 then
+      table.insert(tools, "clangd")
+    end
     -- 데몬 시작이 네트워크에 묶이지 않도록 설치는 scripts/install.ps1이나 수동 명령으로만 한다
     require("mason-tool-installer").setup({ ensure_installed = tools, run_on_start = false })
 
